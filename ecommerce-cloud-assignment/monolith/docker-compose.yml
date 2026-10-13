@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment: {POSTGRES_PASSWORD: pass, POSTGRES_DB: shop}
+  backend:
+    build: ./backend
+    environment: {DATABASE_URL: "postgres://postgres:pass@db:5432/shop"}
+    depends_on: [db]
+  frontend:
+    build: ../frontend
+    ports: ["8080:80"]
+    environment:
+      PRODUCT_URL: http://backend:3000
+      CART_URL: http://backend:3000
+      PAYMENT_URL: http://backend:3000
+    depends_on: [backend]

@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment: {POSTGRES_PASSWORD: pass}
+    volumes: ["./init.sql:/docker-entrypoint-initdb.d/init.sql"]
+  product-service:
+    build: ./product-service
+    environment: {DATABASE_URL: "postgres://postgres:pass@db:5432/productdb"}
+    depends_on: [db]
+  cart-service:
+    build: ./cart-service
+    environment: {DATABASE_URL: "postgres://postgres:pass@db:5432/cartdb"}
+    depends_on: [db]
+  payment-service:
+    build: ./payment-service
+    environment:
+      DATABASE_URL: "postgres://postgres:pass@db:5432/paymentdb"
+      CART_SERVICE_URL: http://cart-service:3000
+    depends_on: [db, cart-service]
+  frontend:
+    build: ../frontend
+    ports: ["8081:80"]
+    environment:
+      PRODUCT_URL: http://product-service:3000
+      CART_URL: http://cart-service:3000
+      PAYMENT_URL: http://payment-service:3000
+    depends_on: [product-service, cart-service, payment-service]

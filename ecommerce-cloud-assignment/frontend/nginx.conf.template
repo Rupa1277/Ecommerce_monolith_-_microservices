@@ -1,0 +1,8 @@
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+  location / { try_files $uri /index.html; }
+  location /api/products { proxy_pass ${PRODUCT_URL}; }
+  location /api/cart     { proxy_pass ${CART_URL}; }
+  location /api/payment  { proxy_pass ${PAYMENT_URL}; }
+}
