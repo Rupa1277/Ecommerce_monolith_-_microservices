@@ -1,0 +1,27 @@
+# Runs on the "cart" VM: the cart microservice + its own mini database
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shop-db
+    command: postgres -c wal_level=logical
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: cartdb
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+  cart-service:
+    build: ../../microservices/cart-service
+    container_name: cart-service
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/cartdb
+    ports: ["3000:3000"]
+    depends_on:
+      db: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  pgdata:

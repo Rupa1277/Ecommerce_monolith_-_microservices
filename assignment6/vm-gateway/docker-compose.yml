@@ -1,0 +1,11 @@
+# Runs on the gateway VM: React frontend + nginx API gateway (only VM with external access)
+services:
+  frontend:
+    build: ../../frontend
+    container_name: gateway
+    ports: ["80:80"]
+    environment:
+      PRODUCT_URL: http://${PRODUCT_IP}:3000
+      CART_URL: http://${CART_IP}:3000
+      PAYMENT_URL: http://${PAYMENT_IP}:3000
+    restart: unless-stopped

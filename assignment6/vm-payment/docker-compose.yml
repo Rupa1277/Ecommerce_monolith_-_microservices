@@ -1,0 +1,28 @@
+# Runs on the "payment" VM: the payment microservice + its own mini database
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shop-db
+    command: postgres -c wal_level=logical
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: paymentdb
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+  payment-service:
+    build: ../../microservices/payment-service
+    container_name: payment-service
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/paymentdb
+      CART_SERVICE_URL: http://${CART_IP}:3000
+    ports: ["3000:3000"]
+    depends_on:
+      db: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  pgdata:

@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: flask-demo
+    ports:
+      - "5000:5000"
+    volumes:
+      - app-data:/app/data
+    networks:
+      - demo-net
+    restart: unless-stopped
+
+networks:
+  demo-net:
+
+volumes:
+  app-data:

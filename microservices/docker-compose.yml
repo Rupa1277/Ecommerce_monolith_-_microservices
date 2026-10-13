@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shop-postgres
+    environment:
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks: [backend-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  product-service:
+    build: ./product-service
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/productdb
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [frontend-net, backend-net]
+
+  cart-service:
+    build: ./cart-service
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/cartdb
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [frontend-net, backend-net]
+
+  payment-service:
+    build: ./payment-service
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/paymentdb
+      CART_SERVICE_URL: http://cart-service:3000
+    depends_on:
+      db: {condition: service_healthy}
+      cart-service: {condition: service_started}
+    networks: [frontend-net, backend-net]
+
+  frontend:
+    build: ../frontend
+    ports:
+      - "8081:80"
+    environment:
+      PRODUCT_URL: http://product-service:3000
+      CART_URL: http://cart-service:3000
+      PAYMENT_URL: http://payment-service:3000
+    depends_on: [product-service, cart-service, payment-service]
+    networks: [frontend-net]
+
+networks:
+  frontend-net:
+  backend-net:
+
+volumes:
+  pgdata:
